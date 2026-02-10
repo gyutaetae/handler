@@ -98,6 +98,18 @@ class ClickableImagePanel(QFrame):
             # 테스트를 위해 빈 이미지 생성 (파일 없을 때 대비)
             self.base_pixmap = QPixmap(1000, 1000)
             self.base_pixmap.fill(QColor("#2c2c2c"))
+        
+        # 빨간색 표시 이미지 로드
+        self.red_indicator = QPixmap("image/red.jpg")
+        if self.red_indicator.isNull():
+            # red.jpg가 없으면 기본 빨간 원 생성
+            self.red_indicator = QPixmap(60, 60)
+            self.red_indicator.fill(Qt.GlobalColor.transparent)
+            from PyQt6.QtGui import QPainter
+            painter = QPainter(self.red_indicator)
+            painter.setBrush(QColor(255, 0, 0))
+            painter.drawEllipse(0, 0, 60, 60)
+            painter.end()
 
         # 버튼 상태 관리 (1~11번)
         self.button_states = {i: False for i in range(1, 13)}
@@ -105,13 +117,13 @@ class ClickableImagePanel(QFrame):
         # 버튼 중심 좌표 (원본 이미지 픽셀 기준)
         self.indicator_positions = [
             {"x": 298, "y": 306, "button": 1},
-            {"x": 356, "y": 268, "button": 2},
+            {"x": 356, "y": 269, "button": 2},
             {"x": 416, "y": 233, "button": 3},
             {"x": 374, "y": 328, "button": 4},
             {"x": 421, "y": 376, "button": 5},
             {"x": 489, "y": 300, "button": 6},
             {"x": 636, "y": 241, "button": 7},
-            {"x": 748, "y": 206, "button": 8},
+            {"x": 724, "y": 202, "button": 8},
             {"x": 802, "y": 153, "button": 9},
             {"x": 690, "y": 346, "button": 10},
             {"x": 757, "y": 310, "button": 11},
@@ -173,16 +185,31 @@ class ClickableImagePanel(QFrame):
         painter = QPainter(temp_pixmap)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         
-        # 빨간색 테두리 설정
-        pen = QPen(QColor(255, 0, 0), 6) # 선 굵기도 크게 (원본이 크니까)
-        painter.setPen(pen)
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        
-        # ON 상태인 버튼에 동그라미 그리기 (원본 픽셀 좌표 사용)
+        # ON 상태인 버튼에 표시
         for pos in self.indicator_positions:
-            if self.button_states[pos["button"]]:
-                radius = 25
-                painter.drawEllipse(pos["x"] - radius, pos["y"] - radius, radius * 2, radius * 2)
+            button_num = pos["button"]
+            if self.button_states[button_num]:
+                # 1~5번 버튼: 빨간색 이미지 표시
+                if 1 <= button_num <= 5:
+                    img_size = 50  # 이미지 크기
+                    scaled_red = self.red_indicator.scaled(
+                        img_size, img_size,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation
+                    )
+                    # 중심점 기준으로 이미지 배치
+                    painter.drawPixmap(
+                        pos["x"] - img_size // 2,
+                        pos["y"] - img_size // 2,
+                        scaled_red
+                    )
+                # 6~12번 버튼: 빨간색 테두리 동그라미
+                else:
+                    pen = QPen(QColor(255, 0, 0), 6)
+                    painter.setPen(pen)
+                    painter.setBrush(Qt.BrushStyle.NoBrush)
+                    radius = 25
+                    painter.drawEllipse(pos["x"] - radius, pos["y"] - radius, radius * 2, radius * 2)
         
         painter.end()
         
