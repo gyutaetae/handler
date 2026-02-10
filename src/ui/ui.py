@@ -79,99 +79,135 @@ class SettingPanel(QFrame):
         baud = self.baud_combo.currentText()
         mode = self.mode_combo.currentText()
         self.controller.connect_serial(port, baud, mode)
+# ... (상단 임포트 동일)
 
-
-# --- [Clickable Image Panel: 클릭 가능한 이미지 패널] ---
 class ClickableImagePanel(QFrame):
     def __init__(self):
         super().__init__()
         self.setFrameStyle(QFrame.Shape.StyledPanel)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(5, 5, 5, 5)
         
         self.img_label = QLabel()
         self.img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.img_label.setMouseTracking(True)
         
-        # 현재 이미지 번호
-        self.current_image = 0
+        # 1. 원본 이미지 로드 및 기준 크기 저장
+        self.base_pixmap = QPixmap("image/handle_image.png")
+        if self.base_pixmap.isNull():
+            self.img_label.setText("Image Not Found")
+            # 테스트를 위해 빈 이미지 생성 (파일 없을 때 대비)
+            self.base_pixmap = QPixmap(1000, 1000)
+            self.base_pixmap.fill(QColor("#2c2c2c"))
+
+        # 버튼 상태 관리 (1~11번)
+        self.button_states = {i: False for i in range(1, 13)}
         
-        # 토글 상태 (4 또는 5)
-        self.toggle_state = 4
-        
-        # 클릭 가능한 영역 정의 (x, y, width, height, button_number)
-        # 여기에 실제 좌표를 입력하세요
-        self.click_areas = [
-            {"x": 147, "y": 159, "w": 80, "h": 80, "button": 1},  # 버튼 1 영역
-            {"x": 180, "y": 137, "w": 80, "h": 80, "button": 2},  # 버튼 2 영역
-            {"x": 212, "y": 118, "w": 80, "h": 80, "button": 3},  # 버튼 3 영역
-            {"x": 201, "y": 239, "w": 80, "h": 80, "button": "toggle"},  # 토글 스위치 (4↔5)
+        # 버튼 중심 좌표 (원본 이미지 픽셀 기준)
+        self.indicator_positions = [
+            {"x": 298, "y": 306, "button": 1},
+            {"x": 356, "y": 268, "button": 2},
+            {"x": 416, "y": 233, "button": 3},
+            {"x": 374, "y": 328, "button": 4},
+            {"x": 421, "y": 376, "button": 5},
+            {"x": 489, "y": 300, "button": 6},
+            {"x": 636, "y": 241, "button": 7},
+            {"x": 748, "y": 206, "button": 8},
+            {"x": 802, "y": 153, "button": 9},
+            {"x": 690, "y": 346, "button": 10},
+            {"x": 757, "y": 310, "button": 11},
+            {"x": 815, "y": 240, "button": 12}
         ]
         
-        # 마우스 이벤트 연결
         self.img_label.mousePressEvent = self.on_image_clicked
-        
-        # 기본 이미지 로드
-        self.load_image("image/handle_image.png")
-        
         layout.addWidget(self.img_label)
-    
-    def load_image(self, image_path):
-        """이미지 로드"""
-        pixmap = QPixmap(image_path)
-        if not pixmap.isNull():
-            scaled_pixmap = pixmap.scaled(600, 600, Qt.AspectRatioMode.KeepAspectRatio, 
-                                         Qt.TransformationMode.SmoothTransformation)
-            self.img_label.setPixmap(scaled_pixmap)
-        else:
-            self.img_label.setText(f"Image Not Found: {image_path}")
-            self.img_label.setStyleSheet("color: #888; font-size: 14px;")
-    
+        
+        # 최초 실행 시 그리기
+        self.draw_indicators()
+
+    def resizeEvent(self, event):
+        """창 크기가 바뀔 때마다 이미지 다시 스케일링"""
+        super().resizeEvent(event)
+        self.draw_indicators()
+
+    def get_pixmap_rect(self):
+        """Label 안에서 실제로 이미지가 차지하고 있는 영역 계산"""
+        if not self.img_label.pixmap(): return self.rect()
+        
+        label_size = self.img_label.size()
+        pix_size = self.img_label.pixmap().size()
+        
+        # 중앙 정렬이므로 여백 계산
+        x_offset = (label_size.width() - pix_size.width()) // 2
+        y_offset = (label_size.height() - pix_size.height()) // 2
+        
+        return x_offset, y_offset, pix_size.width(), pix_size.height()
+
     def on_image_clicked(self, event: QMouseEvent):
-        """이미지 클릭 이벤트"""
-        x = event.pos().x()
-        y = event.pos().y()
+        """화면 클릭 좌표를 원본 이미지 좌표로 변환하여 판정"""
+        x_off, y_off, p_w, p_h = self.get_pixmap_rect()
         
-        # 클릭 좌표 출력 (개발용)
-        print(f"\n[클릭 좌표] x={x}, y={y}")
-        print(f'    {{"x": {x}, "y": {y}, "w": 80, "h": 80, "button": ?}},')
+        # 1. 클릭 위치가 실제 이미지 내부인지 확인
+        click_x = event.pos().x() - x_off
+        click_y = event.pos().y() - y_off
         
-        # 클릭 영역 확인
-        for area in self.click_areas:
-            # 넉넉한 클릭 영역 (±10 픽셀)
-            margin = 3
-            if (area["x"] - margin <= x <= area["x"] + area["w"] + margin and
-                area["y"] - margin <= y <= area["y"] + area["h"] + margin):
-                
-                button_num = area["button"]
-                print(f"[버튼 {button_num} 클릭됨!]")
-                
-                # 토글 버튼 처리
-                if button_num == "toggle":
-                    self.toggle_switch()
-                else:
-                    self.switch_image(button_num)
-                return
+        if 0 <= click_x <= p_w and 0 <= click_y <= p_h:
+            # 2. 클릭한 위치를 원본 이미지 픽셀 비율로 환산
+            orig_x = int(click_x * (self.base_pixmap.width() / p_w))
+            orig_y = int(click_y * (self.base_pixmap.height() / p_h))
+            
+            print(f"Original Image Pixel: {orig_x}, {orig_y}")
+            
+            # 3. 버튼 판정 (원본 좌표 기준 근접도 확인)
+            for pos in self.indicator_positions:
+                dist = ((pos["x"] - orig_x)**2 + (pos["y"] - orig_y)**2)**0.5
+                if dist < 40: # 40픽셀 이내면 클릭으로 인정
+                    self.toggle_button(pos["button"])
+                    break
+
+    def draw_indicators(self):
+        """원본 이미지에 먼저 그리고, 화면 크기에 맞춰 출력"""
+        from PyQt6.QtGui import QPainter, QPen
+        
+        # 원본 복사본 생성 (원본 유지)
+        temp_pixmap = self.base_pixmap.copy()
+        painter = QPainter(temp_pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # 빨간색 테두리 설정
+        pen = QPen(QColor(255, 0, 0), 6) # 선 굵기도 크게 (원본이 크니까)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        
+        # ON 상태인 버튼에 동그라미 그리기 (원본 픽셀 좌표 사용)
+        for pos in self.indicator_positions:
+            if self.button_states[pos["button"]]:
+                radius = 25
+                painter.drawEllipse(pos["x"] - radius, pos["y"] - radius, radius * 2, radius * 2)
+        
+        painter.end()
+        
+        # 화면(Label) 크기에 맞춰 스케일링
+        scaled_pixmap = temp_pixmap.scaled(
+            self.img_label.size(),
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation
+        )
+        self.img_label.setPixmap(scaled_pixmap)
+
+    def toggle_button(self, btn_num):
+        self.button_states[btn_num] = not self.button_states[btn_num]
+        print(f"Button {btn_num} is {'ON' if self.button_states[btn_num] else 'OFF'}")
+        self.draw_indicators()
+
+    def set_button_state(self, button_number, state):
+        """외부에서 버튼 상태 설정"""
+        if button_number in self.button_states:
+            self.button_states[button_number] = state
+            self.draw_indicators()
     
-    def toggle_switch(self):
-        """토글 스위치 (4 ↔ 5)"""
-        if self.toggle_state == 4:
-            self.toggle_state = 5
-        else:
-            self.toggle_state = 4
-        
-        image_path = f"image/{self.toggle_state}.png"
-        self.load_image(image_path)
-        self.current_image = self.toggle_state
-        print(f"[토글 전환] {self.toggle_state}.png로 변경됨")
-    
-    def switch_image(self, button_number):
-        """버튼 번호에 따라 이미지 전환"""
-        if button_number in [1, 2, 3]:
-            image_path = f"image/{button_number}.png"
-            self.load_image(image_path)
-            self.current_image = button_number
-            print(f"[이미지 전환] {button_number}.png로 변경됨")
+    def get_button_state(self, button_number):
+        """버튼 상태 조회"""
+        return self.button_states.get(button_number, False)
     
     def set_image_visible(self, visible):
         """이미지 표시/숨김 제어"""
@@ -309,7 +345,6 @@ class ControlPanel(QFrame):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(10)
-
         layout.addStretch()
 
         # Clear Log 버튼
