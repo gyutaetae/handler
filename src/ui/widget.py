@@ -12,7 +12,7 @@ class Widgets(QFrame):
         self.img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # 1. 배경 이미지 로드
-        self.base_pixmap = QPixmap("image/handle_image.png")
+        self.base_pixmap = QPixmap("image/cch_front.png")
         if self.base_pixmap.isNull():
             self.base_pixmap = QPixmap(900, 900)
             self.base_pixmap.fill(QColor("#2c2c2c"))

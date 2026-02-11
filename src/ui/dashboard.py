@@ -1,5 +1,4 @@
 import sys
-import random
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QGridLayout, QPushButton, QLabel, 
                              QComboBox, QTableWidget, QTableWidgetItem, QTextEdit, 
@@ -71,11 +70,11 @@ class LogPanel(QFrame):
         layout.addWidget(QLabel("System Logs"))
         self.log_viewer = QTextEdit()
         self.log_viewer.setReadOnly(True)
-        self.log_viewer.setStyleSheet("font-family: 'Consolas'; background-color: #f8f9fa;")
+        self.log_viewer.setStyleSheet("font-family: 'Consolas';")
         layout.addWidget(self.log_viewer)
 
     def write_log(self, text):
-        time = QDateTime.currentDateTime().toString("HH:mm:ss")
+        time = QDateTime.currentDateTime().toString("HH:mm:ss.zzz")
         self.log_viewer.append(f"[{time}] {text}")
 
 # --- [4. MainPanel: 통합 관리 메인 윈도우] ---
@@ -89,7 +88,6 @@ class MainPanel(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
 
-        # UI 패널들 생성 (자기 자신(self)을 인자로 전달하여 연결)
         self.log_panel = LogPanel()
         self.setting_panel = SettingPanel(self) # 메인 윈도우 전달
         self.data_panel = DataPanel()
@@ -108,11 +106,14 @@ class MainPanel(QMainWindow):
         main_layout.addLayout(mid_layout)
 
         # 초기 로그
-        self.log("프로그램이 시작되었습니다.")
+        self.log("Program started.")
 
     # 로그 
     def log(self, text):
         self.log_panel.write_log(text)
+
+    def connect_device(self, port, baud, mode):
+        self.log(f"Port: {port}, Baud: {baud}, Mode: {mode} connected.")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
