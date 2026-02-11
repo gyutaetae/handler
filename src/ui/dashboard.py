@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QFrame, QHeaderView)
 from PyQt6.QtCore import Qt, QDateTime
 from PyQt6.QtGui import QColor
-from widget import ClickableImagePanel
+from widget import Widgets
 
 # --- [1. SettingPanel: 상단 설정 UI] ---
 class SettingPanel(QFrame):
@@ -93,8 +93,8 @@ class MainPanel(QMainWindow):
         self.log_panel = LogPanel()
         self.setting_panel = SettingPanel(self) # 메인 윈도우 전달
         self.data_panel = DataPanel()
-        self.image_panel = ClickableImagePanel()
-
+        self.image_panel = Widgets()
+        
         # 레이아웃 배치
         main_layout.addWidget(self.setting_panel)
 
