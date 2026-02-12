@@ -1,71 +1,39 @@
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QLabel
+from PyQt6.QtWidgets import QWidget, QPainter, QPen, QColor
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap, QColor, QPainter, QPen, QMouseEvent
+from PyQt6.QtGui import QPixmap
 
-class Widgets(QFrame):
-    def __init__(self):
-        super().__init__()
-        self.setFrameStyle(QFrame.Shape.StyledPanel)
-        layout = QVBoxLayout(self)
+class create_button:
+    def __init__(self, name, x, y):
+        self.name = name
+        self.x = x
+        self.y = y
+        self.show_img = True
+        self.radius = 30
+        self.is_on = False
         
-        self.img_label = QLabel()
-        self.img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        # 1. 배경 이미지 로드
-        self.base_pixmap = QPixmap("image/cch_front.png")
-        if self.base_pixmap.isNull():
-            self.base_pixmap = QPixmap(900, 900)
-            self.base_pixmap.fill(QColor("#2c2c2c"))
-        
-        # 2. 빨간색 점 이미지 생성
-        self.red_indicator = QPixmap(60, 60)
-        self.red_indicator.fill(Qt.GlobalColor.transparent)
-        painter = QPainter(self.red_indicator)
-        painter.setBrush(QColor(255, 0, 0))
-        painter.drawEllipse(15, 15, 30, 30)
-        painter.end()
-
-        # 3. 버튼(인디케이터) 데이터 리스트
-        self.buttons = []
-        self._init_all_buttons()
-        
-        self.img_label.mousePressEvent = self.on_image_clicked
-        layout.addWidget(self.img_label)
-        self.draw_indicators()
-
-    def create_button(self, num, x, y, show_img=True, radius=30):
-        button_data = {
-            "num": num,
-            "x": x,
-            "y": y,
-            "radius": radius,
-            "show_img": show_img,
-            "is_on": False  # 상태값
+        # 1~5번 버튼: fire, palm, laser, lock, ets (빨간색 점 + 동그라미)
+        self.red_dot_buttons = ["fire", "palm", "laser", "lock", "ets"]
+        # 6~12번 버튼: override, fire_enable, camera, shoot_mode, cursor, load, auto_tracking (동그라미만)
+        self.circle_only_buttons = ["override", "fire_enable", "camera", "shoot_mode", "cursor", "load", "auto_tracking"]
+        self.buttons_position = {
+            "fire": (300, 304),
+            "palm": (359, 268),
+            "laser": (416, 235),
+            "lock": (374, 328),
+            "ets": (424, 376),
+            "override": (489, 300),
+            "fire_enable": (636, 241),
         }
-        self.buttons.append(button_data)
-
-    def _init_all_buttons(self):
-        # 1~5번: 점+동그라미 (show_img=True)
-        pos_group_1 = [(300, 304), (359, 268), (416, 235), (374, 328), (424, 376)]
-        for i, (x, y) in enumerate(pos_group_1, 1):
-            self.create_button(i, x, y, show_img=True)
-
-        # 6~12번: 동그라미만 (show_img=False)
-        pos_group_2 = [(489, 300), (636, 241), (724, 202), (802, 153), (690, 346), (757, 310), (815, 240)]
-        for i, (x, y) in enumerate(pos_group_2, 6):
-            self.create_button(i, x, y, show_img=False)
-
-    def on_image_clicked(self, event: QMouseEvent):
-        label_w, label_h = self.img_label.width(), self.img_label.height()
-        orig_x = int(event.pos().x() * (self.base_pixmap.width() / label_w))
-        orig_y = int(event.pos().y() * (self.base_pixmap.height() / label_h))
-
-        for btn in self.buttons:
-            distance = ((btn['x'] - orig_x)**2 + (btn['y'] - orig_y)**2)**0.5
-            if distance < btn['radius']:
-                btn['is_on'] = not btn['is_on']  # 상태 토글
-                self.draw_indicators()
-                break
+        self.buttons_position = {
+            "camera": (724, 202),
+            "shoot_mode": (724, 202),
+            "cursor": (802, 153),
+            "load": (690, 346),
+            "auto_tracking": (690, 346),
+            "control_mode": (757, 310),
+            "zoom": (815, 240),
+            "modify_dist": (815, 240)
+        }
 
     def draw_indicators(self):
         """모든 버튼 데이터를 순회하며 캔버스에 그리기"""
@@ -91,6 +59,6 @@ class Widgets(QFrame):
         # 화면에 맞게 출력
         scaled = canvas.scaled(self.img_label.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.img_label.setPixmap(scaled)
-
+    
     def resizeEvent(self, event):
         self.draw_indicators()
