@@ -4,67 +4,29 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QComboBox, QTableWidget, QTableWidgetItem, QTextEdit, 
                              QFrame, QHeaderView)
 from PyQt6.QtCore import Qt, QDateTime
-from PyQt6.QtGui import QColor, QPixmap
-from widget import create_button
+from PyQt6.QtGui import QColor
+from widget import Widgets as ImagePanel
 
-# --- [1. MainPanel: 통합 관리 메인 윈도우] ---
-class MainPanel(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Advanced RS422 Controller")
-        self.resize(1400, 900)
-
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        main_layout = QVBoxLayout(central_widget)
-
-        self.log_panel = LogPanel()
-        self.setting_panel = SettingPanel(self) # 메인 윈도우 전달
-        self.data_panel = DataPanel()
-        self.image_panel = Widgets()
-        
-        # 레이아웃 배치
-        main_layout.addWidget(self.setting_panel)
-
-        mid_layout = QGridLayout()
-        mid_layout.addWidget(self.image_panel, 0, 0, 2, 1)
-        mid_layout.addWidget(self.data_panel, 0, 1)
-        mid_layout.addWidget(self.log_panel, 1, 1)
-        
-        mid_layout.setColumnStretch(0, 2)
-        mid_layout.setColumnStretch(1, 1)
-        main_layout.addLayout(mid_layout)
-
-        # 초기 로그
-        self.log("Program started.")
-
-     # 로그 
-    def log(self, text):
-        self.log_panel.write_log(text)
-
-    def connect_device(self, port, baud, mode):
-        self.log(f"Port: {port}, Baud: {baud}, Mode: {mode} connected.")
-        
-# --- [2. SettingPanel: 상단 설정 UI] ---
+# --- [1. SettingPanel: 장치 연결 및 통신 설정] ---
 class SettingPanel(QFrame):
-    def __init__(self, main_window): 
+    def __init__(self, main_window):
         super().__init__()
-        self.main_window = main_window 
+        self.main_window = main_window
         self.setFrameStyle(QFrame.Shape.StyledPanel)
         layout = QHBoxLayout(self)
-        
+
+        # 콤보박스 설정
         self.port_combo = self._create_combo(["COM1", "COM2", "COM3"], layout, "Port:")
         self.baud_combo = self._create_combo(["9600", "115200"], layout, "Baud:")
         self.mode_combo = self._create_combo(["RS422", "RS232"], layout, "Mode:")
 
         layout.addStretch()
 
-        self.conn_btn = QPushButton("Connect Device")
+        self.conn_btn = QPushButton("Connect")
         self.conn_btn.setStyleSheet("""
             QPushButton { background-color: #28a745; color: white; font-weight: bold; padding: 8px 15px; border-radius: 4px; }
             QPushButton:hover { background-color: #218838; }
         """)
-        # 메인 윈도우의 함수를 직접 호출
         self.conn_btn.clicked.connect(self.handle_connect)
         layout.addWidget(self.conn_btn)
 
@@ -75,43 +37,33 @@ class SettingPanel(QFrame):
         layout.addWidget(combo)
         return combo
 
+    def handle_connect(self):
+        port = self.port_combo.currentText()
+        baud = self.baud_combo.currentText()
+        mode = self.mode_combo.currentText()
+        self.main_window.connect_device(port, baud, mode)
 
-# --- [3. ImagePanel: 좌측 이미지 패널] ---
-class ImagePanel(QFrame):
-    def __init__(self):
-        super().__init__()
-        self.setFrameStyle(QFrame.Shape.StyledPanel)
-        layout = QVBoxLayout(self)
-        
-        self.img_label = QLabel()
-        self.img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.img_label)
-        self.base_pixmap = QPixmap("image/cch_front.png")
-        if self.base_pixmap.isNull():
-            self.base_pixmap = QPixmap(900, 900)
-            self.base_pixmap.fill(QColor("#2c2c2c"))
-        self.img_label.setPixmap(self.base_pixmap)
-        
-# --- [4. DataPanel: 우측 상단 데이터 테이블] ---
+# --- [2. DataPanel: 동적 데이터 매핑 테이블] ---
 class DataPanel(QFrame):
-    # data: map(string, line)
     def __init__(self):
         super().__init__()
         self.setFrameStyle(QFrame.Shape.StyledPanel)
         layout = QVBoxLayout(self)
-        
-        title=QLable("Telemetry Real-time Data")
-        title.setStyleSheet("font-size: 14px; font-weight: bold;")
+
+        title = QLabel("Parsed Data")
+        title.setStyleSheet("font-weight: bold; font-size: 13px;")
         layout.addWidget(title)
 
-        self.data_table = QTableWidget()
-        self.data_table.setColumnCount(2)
-        self.data_table.setHorizontalHeaderLabels(["Name", "Value"])
-        
+        self.data_table = QTableWidget(6, 6) # 초기 행 0, 열 2
+        self.data_table.setHorizontalHeaderLabels(["ID", "ID","Type","Statue","Value1","Value2"])
+        self.data_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.data_table)
+
+        # 데이터 매핑을 위한 딕셔너리 {name: row_index}
         self.data_map = {}
-        
+
     def update_data_line(self, name, value):
+        """데이터를 테이블에 매핑하여 업데이트 또는 신규 추가"""
         if name in self.data_map:
             row_idx = self.data_map[name]
             self.data_table.setItem(row_idx, 1, QTableWidgetItem(str(value)))
@@ -122,39 +74,104 @@ class DataPanel(QFrame):
             self.data_map[name] = row_idx
             self.data_table.setItem(row_idx, 0, QTableWidgetItem(name))
             self.data_table.setItem(row_idx, 1, QTableWidgetItem(str(value)))
+        
+        # 최신 업데이트 항목으로 스크롤 이동 (선택사항)
+        # self.data_table.scrollToBottom()
 
-# --- [5. LogPanel: 우측 하단 로그 뷰어] ---
+# --- [3. LogPanel: 시스템 로그 뷰어] ---
 class LogPanel(QFrame):
     def __init__(self):
         super().__init__()
         self.setFrameStyle(QFrame.Shape.StyledPanel)
         layout = QVBoxLayout(self)
-        
-        layout.addWidget(QLabel("System Logs"))
+
+        layout.addWidget(QLabel("Data Log"))
         self.log_viewer = QTextEdit()
         self.log_viewer.setReadOnly(True)
-        self.log_viewer.setStyleSheet("font-family: 'Consolas';")
+        self.log_viewer.setStyleSheet("background-color: #1e1e1e; color: #d4d4d4; font-family: 'Consolas';")
         layout.addWidget(self.log_viewer)
 
     def write_log(self, text):
         time = QDateTime.currentDateTime().toString("HH:mm:ss.zzz")
         self.log_viewer.append(f"[{time}] {text}")
 
-# --- [6. control panel: 우측 하단 제어 패널] ---
+# --- [4. ControlPanel: 하단의 clear log, export log 패널] ---
 class ControlPanel(QFrame):
-    #clear log, expert log 버튼 추가 
-    def __init__(self):
+    def __init__(self, main_window):
         super().__init__()
+        self.main_window = main_window
         self.setFrameStyle(QFrame.Shape.StyledPanel)
         layout = QHBoxLayout(self)
+        
+        # Clear Log 버튼
         self.clear_log_btn = QPushButton("Clear Log")
-        self.expert_log_btn = QPushButton("Export Log")
+        # Export Log 버튼
+        self.export_log_btn = QPushButton("Export Log")
         layout.addWidget(self.clear_log_btn)
-        layout.addWidget(self.expert_log_btn)
- 
+        layout.addWidget(self.export_log_btn)
+
+# --- [5. MainPanel: 전체 통합 관리] ---
+class MainPanel(QMainWindow):   
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("RS422 Data Monitor")
+        self.resize(1500, 950)
+
+        # 중앙 위젯 및 메인 레이아웃
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        main_layout = QVBoxLayout(central_widget)
+
+        # 클래스 인스턴스화
+        self.setting_panel = SettingPanel(self)
+        self.image_panel = ImagePanel()      # 위에서 Widgets를 ImagePanel로 별칭 지정
+        self.data_panel = DataPanel()
+        self.log_panel = LogPanel()
+        self.control_panel = ControlPanel(self)
+
+        # 레이아웃 배치
+        # 1. 상단 설정 바
+        main_layout.addWidget(self.setting_panel)
+
+        # 2. 중단 그리드 레이아웃 (이미지 / 데이터 / 로그 / 제어)
+        mid_layout = QGridLayout()
+        
+        # 좌측: 이미지 패널 (크게 배치)
+        mid_layout.addWidget(self.image_panel, 0, 0, 2, 1) 
+        
+        # 우측 상단: 실시간 데이터 테이블
+        mid_layout.addWidget(self.data_panel, 0, 1)
+        
+        # 우측 중단: 로그 패널
+        mid_layout.addWidget(self.log_panel, 1, 1)
+        # 하단 오른쪽에 제어 패널 (Clear Log, Export Log 버튼)
+        mid_layout.addWidget(self.control_panel, 2, 1, 1, 1)
+
+        # 비율 설정 (이미지 쪽을 넓게)
+        mid_layout.setColumnStretch(0, 3)
+        mid_layout.setColumnStretch(1, 1)
+        mid_layout.setRowStretch(0, 1)
+        mid_layout.setRowStretch(1, 1)
+        
+        main_layout.addLayout(mid_layout)
+
+        self.log("System Initialized.")
+        
+        # 테스트용 데이터 매핑 
+        self.data_panel.update_data_line("1", "2")
+        self.data_panel.update_data_line("2", "2")
+
+    def log(self, text):
+        self.log_panel.write_log(text)
+
+    def connect_device(self, port, baud, mode):
+        self.log(f"Attempting connection... Port: {port}, Baud: {baud}")
+        # 여기에 실제 통신 연결 로직 추가
+        self.log(f"Status: Connected to {port} in {mode} mode.")
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setStyle("Fusion")
+    app.setStyle("Fusion") 
     window = MainPanel()
     window.show()
     sys.exit(app.exec())
