@@ -19,14 +19,15 @@ class SettingPanel(QFrame):
         self.port_combo = self._create_combo(["COM1", "COM2", "COM3"], layout, "Port:")
         self.baud_combo = self._create_combo(["9600", "115200"], layout, "Baud:")
         self.mode_combo = self._create_combo(["RS422", "RS232"], layout, "Mode:")
-
         layout.addStretch()
 
+        # Connect 버튼
         self.conn_btn = QPushButton("Connect")
-        self.conn_btn.setStyleSheet("""
-            QPushButton { background-color: #28a745; color: white; font-weight: bold; padding: 8px 15px; border-radius: 4px; }
-            QPushButton:hover { background-color: #218838; }
-        """)
+        self.conn_btn.setStyleSheet(
+            "QPushButton { background-color: #28a745; color: white; font-weight: bold; "
+            "padding: 8px 15px; border-radius: 4px; }"
+            "QPushButton:hover { background-color: #218838; }"
+        )
         self.conn_btn.clicked.connect(self.handle_connect)
         layout.addWidget(self.conn_btn)
 
@@ -38,9 +39,7 @@ class SettingPanel(QFrame):
         return combo
 
     def handle_connect(self):
-        port = self.port_combo.currentText()
-        baud = self.baud_combo.currentText()
-        mode = self.mode_combo.currentText()
+        port, baud, mode = self.port_combo.currentText(), self.baud_combo.currentText(), self.mode_combo.currentText()
         self.main_window.connect_device(port, baud, mode)
 
 # --- [2. DataPanel: 동적 데이터 매핑 테이블] ---
@@ -54,13 +53,12 @@ class DataPanel(QFrame):
         title.setStyleSheet("font-weight: bold; font-size: 13px;")
         layout.addWidget(title)
 
-        self.data_table = QTableWidget(6, 6) # 초기 행 0, 열 2
+        self.data_table = QTableWidget(6, 6)
         self.data_table.setHorizontalHeaderLabels(["ID", "ID","Type","Statue","Value1","Value2"])
         self.data_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.data_table)
 
-        # 데이터 매핑을 위한 딕셔너리 {name: row_index}
-        self.data_map = {}
+        self.data_map = {}  # {name: row_index}
 
     def update_data_line(self, name, value):
         """데이터를 테이블에 매핑하여 업데이트 또는 신규 추가"""
@@ -68,15 +66,11 @@ class DataPanel(QFrame):
             row_idx = self.data_map[name]
             self.data_table.setItem(row_idx, 1, QTableWidgetItem(str(value)))
         else:
-            # 새로운 항목 추가
             row_idx = self.data_table.rowCount()
             self.data_table.insertRow(row_idx)
             self.data_map[name] = row_idx
             self.data_table.setItem(row_idx, 0, QTableWidgetItem(name))
             self.data_table.setItem(row_idx, 1, QTableWidgetItem(str(value)))
-        
-        # 최신 업데이트 항목으로 스크롤 이동 (선택사항)
-        # self.data_table.scrollToBottom()
 
 # --- [3. LogPanel: 시스템 로그 뷰어] ---
 class LogPanel(QFrame):
@@ -103,9 +97,7 @@ class ControlPanel(QFrame):
         self.setFrameStyle(QFrame.Shape.StyledPanel)
         layout = QHBoxLayout(self)
         
-        # Clear Log 버튼
         self.clear_log_btn = QPushButton("Clear Log")
-        # Export Log 버튼
         self.export_log_btn = QPushButton("Export Log")
         layout.addWidget(self.clear_log_btn)
         layout.addWidget(self.export_log_btn)
@@ -122,32 +114,23 @@ class MainPanel(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
 
-        # 클래스 인스턴스화
+        # 패널 인스턴스화
         self.setting_panel = SettingPanel(self)
-        self.image_panel = ImagePanel()      # 위에서 Widgets를 ImagePanel로 별칭 지정
+        self.image_panel = ImagePanel()
         self.data_panel = DataPanel()
         self.log_panel = LogPanel()
         self.control_panel = ControlPanel(self)
 
         # 레이아웃 배치
-        # 1. 상단 설정 바
         main_layout.addWidget(self.setting_panel)
 
-        # 2. 중단 그리드 레이아웃 (이미지 / 데이터 / 로그 / 제어)
         mid_layout = QGridLayout()
-        
-        # 좌측: 이미지 패널 (크게 배치)
-        mid_layout.addWidget(self.image_panel, 0, 0, 2, 1) 
-        
-        # 우측 상단: 실시간 데이터 테이블
-        mid_layout.addWidget(self.data_panel, 0, 1)
-        
-        # 우측 중단: 로그 패널
-        mid_layout.addWidget(self.log_panel, 1, 1)
-        # 하단 오른쪽에 제어 패널 (Clear Log, Export Log 버튼)
-        mid_layout.addWidget(self.control_panel, 2, 1, 1, 1)
+        mid_layout.addWidget(self.image_panel, 0, 0, 2, 1)  # 좌측: 이미지 패널
+        mid_layout.addWidget(self.data_panel, 0, 1)         # 우측 상단: 데이터 테이블
+        mid_layout.addWidget(self.log_panel, 1, 1)          # 우측 중단: 로그 패널
+        mid_layout.addWidget(self.control_panel, 2, 1, 1, 1)  # 하단: 제어 패널
 
-        # 비율 설정 (이미지 쪽을 넓게)
+        # 비율 설정
         mid_layout.setColumnStretch(0, 3)
         mid_layout.setColumnStretch(1, 1)
         mid_layout.setRowStretch(0, 1)
@@ -157,7 +140,7 @@ class MainPanel(QMainWindow):
 
         self.log("System Initialized.")
         
-        # 테스트용 데이터 매핑 
+        # 테스트용 데이터
         self.data_panel.update_data_line("1", "2")
         self.data_panel.update_data_line("2", "2")
 
@@ -166,7 +149,6 @@ class MainPanel(QMainWindow):
 
     def connect_device(self, port, baud, mode):
         self.log(f"Attempting connection... Port: {port}, Baud: {baud}")
-        # 여기에 실제 통신 연결 로직 추가
         self.log(f"Status: Connected to {port} in {mode} mode.")
 
 if __name__ == "__main__":
