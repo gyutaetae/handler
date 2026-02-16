@@ -10,7 +10,7 @@ class TestPacketGenerator:
         self.count = 0x00
     
     def _update_count(self):
-        self.count = self.count + 1
+        self.count = (self.count + 1) % 256
     
     def _allocate_random(self, start=0, end=255):
         return random.randint(start, end)
@@ -74,10 +74,14 @@ class TestPacketGenerator:
         print()
     
     def get_packet(self, to_byte=False):
-        if not to_byte:
-            return self.packet
-        else:
-            return bytes(self.packet)
+        try:
+            if not to_byte:
+                return self.packet
+            else:
+                return bytes(self.packet)
+        except:
+            print(f"발견된 문제 데이터: {self.packet}") # 여기서 255 넘는 놈을 확인!
+            raise
 
 # if __name__ == "__main__":
 #     tpg = TestPacketGenerator()

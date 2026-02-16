@@ -62,25 +62,30 @@ class TelemetryParser:
         return model
 
     def _parse_payload(self, packet):
-        def calc_height(packet, ix:list):
+        def calc_height(packet, ix:list): # Degree
             msb = packet[ix[0]]
             lsb = packet[ix[1]]
-            return (msb << 8) | lsb
+            height = (msb << 8) | lsb
+            return height
+            
 
-        def calc_turning(packet, ix:list):
+        def calc_turning(packet, ix:list): # Degree
             msb = packet[ix[0]]
             lsb = packet[ix[1]]
-            return (msb << 8) | lsb
+            turning = (msb << 8) | lsb
+            return turning
 
-        def calc_x_axis(packet, ix:list):
+        def calc_x_axis(packet, ix:list): # ???
             msb = packet[ix[0]]
             lsb = packet[ix[1]]
-            return (msb << 8) | lsb
+            x_axis = (msb << 8) | lsb
+            return x_axis
 
-        def calc_y_axis(packet, ix:list):
+        def calc_y_axis(packet, ix:list): # ???
             msb = packet[ix[0]]
             lsb = packet[ix[1]]
-            return (msb << 8) | lsb
+            y_axis = (msb << 8) | lsb
+            return y_axis
 
         model = Payload(
             id=packet[self.id_ix],
