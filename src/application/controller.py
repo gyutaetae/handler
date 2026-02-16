@@ -40,7 +40,8 @@ class TelemetryController(QObject):
         if not self._calc_turning(model):
             print("turning data error")
             return False
-
+        self._calc_x_axis(model)
+        self._calc_y_axis(model)
         return True
 
     def _switch_data_check(self, model):
@@ -94,9 +95,11 @@ class TelemetryController(QObject):
             return False
         
     def _calc_x_axis(self, model):
+        model.payload.x_axis = model.payload.x_axis - 32768
         return True
 
     def _calc_y_axis(self, model):
+        model.payload.y_axis = model.payload.y_axis - 32768
         return True
     
     def _make_update_signal(self, model):
@@ -107,11 +110,11 @@ class TelemetryController(QObject):
                 return "OFF"
         def toggle(bits):
             if bits == 0b00:
-                return "00"
+                return "OFF"
             elif bits == 0b01:
-                return "01"
+                return "ON"
             elif bits == 0b10:
-                return "10"
+                return "ON"
         graph_signals = {
             "height": model.payload.height,
             "turning": model.payload.turning,
@@ -122,7 +125,7 @@ class TelemetryController(QObject):
             "fire": click(model.payload.switch_state.fire),
             "palm": click(model.payload.switch_state.palm),
             "laser": click(model.payload.switch_state.laser),
-            "lock": click(model.payload.switch_state.lock),
+            "lock_on": click(model.payload.switch_state.lock_on),
             "ets": click(model.payload.switch_state.ets),
             "override": click(model.payload.switch_state.override),
             "fire_enable": click(model.payload.switch_state.fire_enable),

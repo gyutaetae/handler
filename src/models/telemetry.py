@@ -5,7 +5,7 @@ class SwitchState:
     fire: int # 12-1 bit 격발
     palm : int # 12-2 bit 팜
     laser: int # 12-3 bit 레이저발사
-    lock: int # 12-4 bit 표적지정
+    lock_on: int # 12-4 bit 표적지정
     ets: int # 12-5 bit ETS
     override: int # 12-6 bit Override
     fire_enable: int # 12-7 bit Fire enable

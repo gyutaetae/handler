@@ -36,16 +36,18 @@ class CustomButton(QPushButton):
             }
         """)
         self.hide()
+
+        self.current_state = "OFF"
+
     def update_data(self, value):
+        if self.current_state == value:
+            return
         if value == "ON":
             self.show()
+            self.current_state = "ON"
         elif value == "OFF":
             self.hide()
-
-        if value == "00":
-            self.hide()
-        elif value == "10":
-            self.show()
+            self.current_state = "OFF"
 
 class RealTimeGraph(pg.PlotWidget):
     def __init__(self, title="Real-time Data", parent=None):

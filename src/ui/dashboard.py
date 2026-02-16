@@ -95,7 +95,7 @@ class ImagePanel(QFrame):
 
     def make_buttons(self):
         positions = [(550,404),(359,568),(616,735),(300,304),(359,268),(416,235),(374,328),(424,376),(489,300),(636,241),(724,202),(802,153),(690,346),(757,310),(815,240)]
-        keys = ["fire", "palm", "laser", "lock", "ets", "override", "fire_enable", "camera", "shoot_mode", "cursor", "load", "auto_tracking", "control_mode", "zoom", "modify_dist"]
+        keys = ["fire", "palm", "laser", "lock_on", "ets", "override", "fire_enable", "camera", "shoot_mode", "cursor", "load", "auto_tracking", "control_mode", "zoom", "modify_dist"]
         for name, position in zip(keys, positions):
             self.button_map[name] = self.widgets.create_button(name, position, self)
 
