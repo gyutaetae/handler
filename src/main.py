@@ -47,6 +47,7 @@ class Main():
         # # App Layer에서 판단된 결과를 UI의 함수와 연결합니다. (3번 방식 구현)
         self.app_controller.update_button.connect(self.main_window._update_button)
         self.app_controller.update_graph.connect(self.main_window._update_graph)
+        self.app_controller.update_inspection.connect(self.main_window._update_inspection)
         # app_controller.error_occurred.connect(main_window.display_error_message)
         
         # # 만약 UI에서 장비로 명령을 보내야 한다면 반대로도 연결 가능합니다.
