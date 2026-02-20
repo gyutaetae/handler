@@ -1,3 +1,5 @@
+import os
+
 class SignalConfigurator:
     def __init__(self):
         pass 
@@ -30,9 +32,9 @@ class SignalConfigurator:
             "load": toggle(model.payload.switch_state.load),
             "auto_tracking": toggle(model.payload.switch_state.auto_tracking),
 
-            "control_mode": toggle(model.payload.switch_state.fire),
-            "zoom": toggle(model.payload.switch_state.palm),
-            "modify_dist": toggle(model.payload.switch_state.laser)
+            "control_mode": toggle(model.payload.switch_state.control_mode),
+            "zoom": toggle(model.payload.switch_state.zoom),
+            "modify_dist": toggle(model.payload.switch_state.modify_dist)
         }
         return button_signals
     
@@ -90,43 +92,8 @@ class SignalConfigurator:
             }
             return check_list[id](model)
 
-        inspection_list = [
-            "버튼 동작 없음 (표적지정 ON)",
-            "버튼 동작 없음 (표적지정 OFF)",
-            "버튼 동작 없음 (격발)",
-            "버튼 동작 없음 (레이저)",
-            "스위치 동작 없음 (발사모드 단발)",
-            "스위치 동작 없음 (발사모드 점사)",
-            "스위치 동작 없음 (발사모드 연사)",
-            "FOV 상방향",
-            "FOV 하방향",
-            "팜 스위치",
-            "팜 스위치 + 표적지정 (ON)",
-            "팜 스위치 + 표적지정 (OFF)",
-            "팜 스위치 + 격발",
-            "팜 스위치 + 레이저",
-            "팜 스위치 + 발사모드 단발",
-            "팜 스위치 + 발사모드 점사",
-            "팜 스위치 + 발사모드 연사",
-            "팜 스위치 + 거리 수정 상방향",
-            "팜 스위치 + 거리 수정 하방향",
-            "카메라 선택 스위치 (idle)",
-            "카메라 선택 스위치 (cam1)",
-            "카메라 선택 스위치 (cam2)",
-            "Fire Enable 스위치 ON",
-            "Fire Enable 스위치 OFF",
-            "Override 스위치 ON",
-            "Override 스위치 OFF",
-            "Move Enable 스위치 ON",
-            "Move Enable 스위치 OFF",
-            "연동전환 스위치 RCWS",
-            "연동전환 스위치 사통",
-            "커서 위",
-            "커서 아래",
-            "커서 좌",
-            "커서 우",
-            "모드전환 / 장전 스위치"
-        ]
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        inspection_list = [line.strip() for line in open(os.path.join(BASE_DIR, "..", "inspection_config.txt"), 'r', encoding='utf-8').readlines()]
 
         inspection_signals = {}
         for id, description in enumerate(inspection_list):

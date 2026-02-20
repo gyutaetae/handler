@@ -72,7 +72,7 @@ class Main():
     def inject_test_data(self):
         self.tpg.generate_packet()
         packet = self.tpg.get_packet(to_byte=True)
-        print(packet)
+        # print(packet)
         self.serial_worker.test(packet) # 데이터 주입
 
 if __name__ == "__main__":

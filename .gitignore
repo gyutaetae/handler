@@ -1,1 +1,5 @@
 **/__pycache__/
+test_prototype/
+src/ui/prev_images/
+src/ui/images_backup/
+src/inspection_config.txt

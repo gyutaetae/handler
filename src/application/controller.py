@@ -17,8 +17,8 @@ class TelemetryController(QObject):
 
     def handle_data(self, packet):
         if validate_packet(packet):
-            print('-'*20)
-            print("packet valide")
+            # print('-'*20)
+            # print("packet valide")
             parser = TelemetryParser()
             transformer = DataTransformer()
             signal_configurator = SignalConfigurator()
@@ -30,18 +30,19 @@ class TelemetryController(QObject):
             
             res = transformer._switch_data_check(model)
             if not res:
-                print("Switch data error")
+                # print("Switch data error")
                 return False
             
             button_signals = signal_configurator.make_button_update_signal(model)
             graph_signals = signal_configurator.make_graph_update_signal(model)
             inspection_signals = signal_configurator.make_inspection_update_signal(model)
             self._send(button_signals, graph_signals, inspection_signals)
-            print('-'*20)
+            # print('-'*20)
         else:
             print("error")
 
     def _send(self, button_signals, graph_signals, inspection_signals):
+        # print(button_signals)
         self.update_button.emit(button_signals)
         self.update_graph.emit(graph_signals)
         self.update_inspection.emit(inspection_signals)

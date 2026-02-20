@@ -1,10 +1,11 @@
+import os
 import sys
 import random
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QGridLayout, QPushButton, QLabel, 
                              QComboBox, QTableWidget, QTableWidgetItem, QTextEdit, 
                              QFrame, QHeaderView)
-from PyQt6.QtCore import pyqtSignal, QObject, QThread, Qt, QDateTime
+from PyQt6.QtCore import pyqtSignal, QObject, QThread, Qt, QDateTime, QSize
 from PyQt6.QtGui import QPainter, QPixmap, QColor, QFont, QMouseEvent
 from ui.widgets import Widgets
 
@@ -68,116 +69,137 @@ class SettingPanel(QFrame):
 # --- [Image Panel: 왼쪽 중간 이미지] ---
 class ImagePanel(QFrame):
     def __init__(self, parent):
-        super().__init__()
+        super().__init__(parent)
         self.parent = parent
         self.parent.update_button.connect(self._update)
-        self.front_pixmap = QPixmap("src/ui/images/front.png")
-        self.back_pixmap = QPixmap("src/ui/images/back.png")
-        self.spacing = 50  # 두 이미지 사이의 간격 (픽셀)
-        self.setFrameStyle(QFrame.Shape.StyledPanel)
-        self.widgets = Widgets()
-        self.button_map = {}
+        self.setStyleSheet("""
+            ImagePanel {
+                background-color: #4a5a7b;
+            }
+        """)
 
-        self.make_buttons()
-
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        painter = QPainter(self)
-        painter.fillRect(self.rect(), QColor("#c0c0c0"))
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-
-        # 1. 첫 번째 이미지(Front) 스케일링 기준 계산
-        # 두 이미지가 나란히 들어가야 하므로 전체 너비의 절반(간격 제외)을 최대치로 설정
-        max_w = (self.width() - self.spacing) // 2
-        max_h = self.height()
-
-        # Front 이미지 스케일링 (비율 유지)
-        scaled_front = self.front_pixmap.scaled(
-            max_w, max_h, 
-            Qt.AspectRatioMode.KeepAspectRatio, 
-            Qt.TransformationMode.SmoothTransformation
-        )
-
-        # 2. 두 번째 이미지(Back) 스케일링
-        # 너비를 'scaled_front.width()'와 동일하게 강제 고정
-        # 이때 세로 비율도 깨지지 않게 하려면 IgnoreAspectRatio 대신 KeepAspectRatio를 쓰되 
-        # 기준 너비를 고정값으로 넘깁니다.
-        scaled_back = self.back_pixmap.scaledToWidth(
-            scaled_front.width(), 
-            Qt.TransformationMode.SmoothTransformation
-        )
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.IMAGE_PATH = os.path.join(BASE_DIR, "images")
+        background_front = os.path.join(self.IMAGE_PATH, "front.png")
+        background_back = os.path.join(self.IMAGE_PATH, "back.png")
         
-        # 만약 scaled_back의 높이가 창 높이보다 커질 경우를 대비한 예외 처리 (선택 사항)
-        if scaled_back.height() > max_h:
-            scaled_back = scaled_back.scaledToHeight(max_h, Qt.TransformationMode.SmoothTransformation)
-            # 이 경우 다시 front의 너비가 틀어질 수 있으므로, 
-            # 엄격하게 동일 가로 크기를 원하시면 위 코드만 사용하세요.
+        self.front_images = ['laser', 'lock_on', 'move_enable', 'override', 
+                             'fire_enable', 'camera','shoot_mode','cursor',
+                             'load','auto_tracking','control_mode','zoom',
+                             'modify_dist','fcc','rcms']
+        self.back_images = ['fire', 'palm']
 
-        # 3. 레이아웃 계산 (중앙 정렬)
-        total_w = scaled_front.width() + self.spacing + scaled_back.width()
-        start_x = (self.width() - total_w) // 2
+        self.main_layout = QHBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.front = ImageSubPanel(background_front, self.front_images)
+        self.back = ImageSubPanel(background_back, self.back_images)
 
-        # 4. 그리기
-        front_y = (self.height() - scaled_front.height()) // 2
-        painter.drawPixmap(start_x, front_y, scaled_front)
+        self.base_width = self.front.orig_w
+        self.front.set_fixed_scale(self.base_width)
+        self.back.set_fixed_scale(self.base_width)
 
-        back_x = start_x + scaled_front.width() + self.spacing
-        back_y = (self.height() - scaled_back.height()) // 2
-        painter.drawPixmap(back_x, back_y, scaled_back)
-
-    def make_buttons(self):
-        positions = [(550,404),(359,568),(616,735),(300,304),(359,268),(416,235),(374,328),(424,376),(489,300),(636,241),(724,202),(802,153),(690,346),(757,310),(815,240)]
-        keys = ["fire", "palm", "laser", "lock_on", "ets", "override", "fire_enable", "camera", "shoot_mode", "cursor", "load", "auto_tracking", "control_mode", "zoom", "modify_dist"]
-        for name, position in zip(keys, positions):
-            self.button_map[name] = self.widgets.create_button(name, position, self)
+        self.main_layout.addWidget(self.front, stretch=1)
+        # self.main_layout.addSpacing(50)
+        self.main_layout.addWidget(self.back, stretch=1)
 
     def _update(self, signals):
-        for name, value in signals.items():
-            self.button_map[name].update_data(value)
+        def check_state(status):
+            if status == "ON":
+                return True
+            elif status == "OFF":
+                return False
 
+            if status == "00":
+                return False
+            elif status == "01":
+                return True
+            elif status == "10":
+                return True
+        # print(signals)
+        # 전면부에서 찾기
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        for name, status in signals.items():
+            if name == 'ets': name = 'move_enable'
+            if name in self.back_images:
+                self.back.layers[name]["label"].setVisible(check_state(status))
+            else:
+                self.front.layers[name]["label"].setVisible(check_state(status))
+                if name == "control_mode":
+                    if status == "00":
+                        self.front.layers["fcc"]["label"].setVisible(check_state(status))
+                        self.front.layers["rcms"]["label"].setVisible(check_state(status))
+                    elif status == "10":
+                        self.front.layers["fcc"]["label"].setVisible(check_state(status))
+                    elif status == "01":
+                        self.front.layers["rcms"]["label"].setVisible(check_state(status))
+
+class ImageSubPanel(QFrame):
+    def __init__(self, background_image, btn_images, parent=None):
+        super().__init__(parent)
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.IMAGE_PATH = os.path.join(BASE_DIR, "images")
+        self.layers = {}
+
+        self.bg_pixmap = QPixmap(background_image)
+        self.orig_w = self.bg_pixmap.width()
+        self.orig_h = self.bg_pixmap.height()
+
+        self.bg_label = QLabel(self)
+        self.bg_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        for btn_name in btn_images:
+            btn_file = os.path.join(self.IMAGE_PATH, btn_name+".png")
+            layer = QLabel(self)
+            pix = QPixmap(btn_file)
+            layer.setPixmap(pix)
+            layer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layer.hide() # 초기 상태 숨김
+            # 파일명을 ID로 사용
+            self.layers[btn_name] = {"label": layer, "pixmap": pix}
+    
+    def set_fixed_scale(self, target_width):
+        """외부에서 지정한 가로폭에 맞춰 이미지를 고정 스케일링"""
+        # 지정된 너비에 맞춰 배경 이미지 크기 조정
+        scaled_bg = self.bg_pixmap.scaledToWidth(target_width, Qt.TransformationMode.SmoothTransformation)
+        self.bg_label.setPixmap(scaled_bg)
+        
+        # 패널 자체의 크기를 실제 이미지 크기에 딱 맞게 고정 (무한 확장 방지)
+        new_h = scaled_bg.height()
+        self.setFixedSize(target_width, new_h)
+
+        # 강조 레이어들도 동일한 크기로 고정
+        for item in self.layers.values():
+            lbl, pix = item["label"], item["pixmap"]
+            lbl.setPixmap(pix.scaledToWidth(target_width, Qt.TransformationMode.SmoothTransformation))
+            lbl.setFixedSize(target_width, new_h)
+
+    def resizeEvent(self, event):
+        """창 크기 변경 시 배경과 모든 레이어 동기화"""
+        curr_size = self.size()
+
+        self.bg_label.resize(curr_size)
+        if not self.bg_pixmap.isNull():
+            self.bg_label.setPixmap(self.bg_pixmap.scaled(
+                curr_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+            ))
+
+        for item in self.layers.values():
+            lbl, pix = item["label"], item["pixmap"]
+            lbl.resize(curr_size)
+            lbl.setPixmap(pix.scaled(
+                curr_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+            ))
+        super().resizeEvent(event)
+
+ 
 # --- [Data Panel: 우측 중간 상단 표] ---
 class DataPanel(QFrame):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
         self.parent.update_inspection.connect(self.update_inspection)
-        self.inspection_list = [
-            "버튼 동작 없음 (표적지정 ON)",
-            "버튼 동작 없음 (표적지정 OFF)",
-            "버튼 동작 없음 (격발)",
-            "버튼 동작 없음 (레이저)",
-            "스위치 동작 없음 (발사모드 단발)",
-            "스위치 동작 없음 (발사모드 점사)",
-            "스위치 동작 없음 (발사모드 연사)",
-            "FOV 상방향",
-            "FOV 하방향",
-            "팜 스위치",
-            "팜 스위치 + 표적지정 (ON)",
-            "팜 스위치 + 표적지정 (OFF)",
-            "팜 스위치 + 격발",
-            "팜 스위치 + 레이저",
-            "팜 스위치 + 발사모드 단발",
-            "팜 스위치 + 발사모드 점사",
-            "팜 스위치 + 발사모드 연사",
-            "팜 스위치 + 거리 수정 상방향",
-            "팜 스위치 + 거리 수정 하방향",
-            "카메라 선택 스위치 (idle)",
-            "카메라 선택 스위치 (cam1)",
-            "카메라 선택 스위치 (cam2)",
-            "Fire Enable 스위치 ON",
-            "Fire Enable 스위치 OFF",
-            "Override 스위치 ON",
-            "Override 스위치 OFF",
-            "Move Enable 스위치 ON",
-            "Move Enable 스위치 OFF",
-            "연동전환 스위치 RCWS",
-            "연동전환 스위치 사통",
-            "커서 위",
-            "커서 아래",
-            "커서 좌",
-            "커서 우",
-            "모드전환 / 장전 스위치"
-        ]
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.inspection_list = [line.strip() for line in open(os.path.join(BASE_DIR, "..", "inspection_config.txt"), 'r', encoding='utf-8').readlines()]
         self.widgets = Widgets()
         self.construct()
 
@@ -294,8 +316,8 @@ class MainPanel(QMainWindow):
         mid_layout.setSpacing(10)
 
         mid_layout.addWidget(self.image_panel, 0, 0)  # 왼쪽 (2행 차지)
-        mid_layout.addWidget(self.data_panel, 0, 1)                    # 우측 상단
-        mid_layout.setColumnStretch(0, 2)
+        mid_layout.addWidget(self.data_panel, 0, 1) # 우측 상단
+        mid_layout.setColumnStretch(0, 1)
         mid_layout.setColumnStretch(1, 1)
         return mid_layout
 

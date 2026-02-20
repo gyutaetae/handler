@@ -15,7 +15,7 @@ class TelemetryParser:
     check_sum_ix = 15
     etx_ix = 16
     def parse(self, packet):
-        print("In parser: ", packet)
+        # print("In parser: ", packet)
         return self._parse_packet(packet)
     
     def _parse_switch_states(self, packet):

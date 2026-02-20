@@ -3,6 +3,7 @@ from PyQt6.QtGui import QColor, QIcon
 from PyQt6.QtCore import pyqtSignal, Qt, QSize
 import pyqtgraph as pg
 import numpy as np
+import os
 
 class Widgets(QWidget):
     def __init__(self):
@@ -19,8 +20,9 @@ class Widgets(QWidget):
 class CustomButton(QPushButton):
     def __init__(self, title, pos:list, parent=None):
         super().__init__("", parent)
-        
-        self.image_path = "src/ui/images/circle.png"
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+        self.image_path = os.path.join(BASE_DIR, "images", "circle.png")
         self.title = title
         self.pos_x = pos[0]
         self.pos_y = pos[1]
@@ -79,7 +81,10 @@ class RealTimeGraph(pg.PlotWidget):
         super().__init__(parent)
         self.setBackground('w')
         self.setTitle(title)
+        self.title = title
         self.showGrid(x=True, y=True)
+        if self.title == 'height' or self.title == 'turning':
+            self.setYRange(-180, 180, padding=0)
         
         # 데이터 라인 초기화
         self.data_line = self.plot(pen=pg.mkPen(color='b', width=2))
@@ -89,6 +94,8 @@ class RealTimeGraph(pg.PlotWidget):
     def update_data(self, new_value):
         """새로운 데이터를 그래프에 반영하는 메서드"""
         self.y_data.pop(0)            # 가장 오래된 데이터 제거
+        if self.title == 'height' or self.title == 'turning':
+            new_value -= 180
         self.y_data.append(new_value)  # 새 데이터 추가
         self.data_line.setData(self.x_data, self.y_data)
 
@@ -120,11 +127,19 @@ class CustomTableWidget(QTableWidget):
 
     def update_line(self, row, status):
         # print(row, status)
+        def change(row):
+            self.item_registry[row][1].setText("점검")
+            self.item_registry[row][1].setForeground(QColor("#28a745"))
+            self.item_registry[row][2] = True
         if self.item_registry[row][2] == True:
             return
         elif status == False:
             return
         else:
-            self.item_registry[row][1].setText("점검")
-            self.item_registry[row][1].setForeground(QColor("#28a745"))
-            self.item_registry[row][2] = True
+            if row == 0:
+                change(row)
+            else:
+                if self.item_registry[row-1][2] == False:
+                    return
+                else:
+                    change(row)

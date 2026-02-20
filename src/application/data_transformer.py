@@ -4,10 +4,10 @@ class DataTransformer:
     
     def _transform_and_checck_degree_data(self, model):
         if not self._calc_height(model):
-            print("height data error")
+            # print("height data error")
             return False
         if not self._calc_turning(model):
-            print("turning data error")
+            # print("turning data error")
             return False
         self._calc_x_axis(model)
         self._calc_y_axis(model)
