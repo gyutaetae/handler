@@ -27,7 +27,6 @@ class TestPacketGenerator:
         for bit in bits:
             decimal_val = (decimal_val << 1) | bit
         return decimal_val
-        
     
     def init_packet(self):
         self.packet[0] = self.stx

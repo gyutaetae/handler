@@ -72,8 +72,13 @@ class Main():
     def inject_test_data(self):
         self.tpg.generate_packet()
         packet = self.tpg.get_packet(to_byte=True)
-        # print(packet)
         self.serial_worker.test(packet) # 데이터 주입
+        # test_packet = [0x02, 0x00, 0x0C]
+        # test_packet.extend([0x01, 0x12, 0x32, 0x45, 0x56, 0x84, 0x10, 0x45, 0x65])
+        # test_packet.extend([0x40, 0x20, 0x80, 0x66, 0x03])
+        # test_packet = bytes(test_packet)
+        # self.serial_worker.test(bytes(test_packet))
+        
 
 if __name__ == "__main__":
     main = Main()

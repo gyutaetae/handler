@@ -6,7 +6,7 @@ class SignalConfigurator:
 
     def make_button_update_signal(self, model):
         def click(bit):
-            if bit == 0:
+            if bit == 1:
                 return "ON"
             else:
                 return "OFF"
