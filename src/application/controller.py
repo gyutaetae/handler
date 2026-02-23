@@ -24,15 +24,15 @@ class TelemetryController(QObject):
             signal_configurator = SignalConfigurator()
             model = parser.parse(packet)
 
-            res = transformer._transform_and_checck_degree_data(model)
+            res = transformer._transform_and_check_degree_data(model)
             if not res:
                 return False
             
             res = transformer._switch_data_check(model)
             if not res:
-                # print("Switch data error")
+                print("Switch data error")
                 return False
-            
+            # print(model)
             button_signals = signal_configurator.make_button_update_signal(model)
             graph_signals = signal_configurator.make_graph_update_signal(model)
             inspection_signals = signal_configurator.make_inspection_update_signal(model)

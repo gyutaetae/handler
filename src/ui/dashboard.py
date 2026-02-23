@@ -130,8 +130,10 @@ class ImagePanel(QFrame):
                         self.front.layers["rcms"]["label"].setVisible(check_state(status))
                     elif status == "10":
                         self.front.layers["fcc"]["label"].setVisible(check_state(status))
+                        self.front.layers["rcms"]["label"].setVisible(False)
                     elif status == "01":
                         self.front.layers["rcms"]["label"].setVisible(check_state(status))
+                        self.front.layers["fcc"]["label"].setVisible(False)
 
 class ImageSubPanel(QFrame):
     def __init__(self, background_image, btn_images, parent=None):

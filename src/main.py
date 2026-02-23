@@ -17,6 +17,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
 from tests.byte_simulator import TestPacketGenerator
+from tests.button_simulator import TestButtonPacket
 ### For Test ###
 
 class Main():
@@ -55,10 +56,17 @@ class Main():
 
         ### For Test ###
         # --- 테스트 데이터 자동 생성 타이머 ---
-        self.tpg = TestPacketGenerator()
+        # self.tpg = TestPacketGenerator()
+        # self.test_timer = QTimer()
+        # self.test_timer.timeout.connect(self.inject_test_data)
+        # self.test_timer.start(5) # 5ms 마다 실행 (200Hz)
+        # -----------------------------
+         # --- 테스트 데이터 자동 생성 타이머 ---
+        self.tpg = TestButtonPacket()
+        self.tpg.generate_combinations()
         self.test_timer = QTimer()
         self.test_timer.timeout.connect(self.inject_test_data)
-        self.test_timer.start(5) # 5ms 마다 실행 (200Hz)
+        self.test_timer.start(500) # 0.5s 마다 실행
         # -----------------------------
         ### For Test ###
 
@@ -70,8 +78,7 @@ class Main():
         sys.exit(self.app.exec())
 
     def inject_test_data(self):
-        self.tpg.generate_packet()
-        packet = self.tpg.get_packet(to_byte=True)
+        packet = self.tpg.get_combination()
         self.serial_worker.test(packet) # 데이터 주입
         # test_packet = [0x02, 0x00, 0x0C]
         # test_packet.extend([0x01, 0x12, 0x32, 0x45, 0x56, 0x84, 0x10, 0x45, 0x65])
