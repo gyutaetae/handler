@@ -46,3 +46,7 @@ class TelemetryController(QObject):
         self.update_button.emit(button_signals)
         self.update_graph.emit(graph_signals)
         self.update_inspection.emit(inspection_signals)
+
+    def update_worker(self, worker):
+        self.worker = worker
+        self.worker.data_received.connect(self.handle_data)

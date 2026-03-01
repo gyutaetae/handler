@@ -21,19 +21,19 @@ class SettingPanel(QFrame):
         # Port
         layout.addWidget(QLabel("Port:"))
         self.port_combo = QComboBox()
-        self.port_combo.addItems(["COM1", "COM2", "COM3"])
+        self.port_combo.addItems(["COM1", "COM2", "COM3", "COM10"])
         layout.addWidget(self.port_combo)
 
         # Baud Rate
         layout.addWidget(QLabel("Baud Rate:"))
         self.baud_combo = QComboBox()
-        self.baud_combo.addItems(["9600", "115200"])
+        self.baud_combo.addItems(["115200"])
         layout.addWidget(self.baud_combo)
 
         # Mode
         layout.addWidget(QLabel("Mode:"))
         self.mode_combo = QComboBox()
-        self.mode_combo.addItems(["RS422", "RS232"])
+        self.mode_combo.addItems(["RS422"])
         layout.addWidget(self.mode_combo)
 
         layout.addStretch()
@@ -56,15 +56,13 @@ class SettingPanel(QFrame):
                 background-color: #1e7e34;
             }
         """)
-        self.conn_btn.clicked.connect(self.handle_connect)
         layout.addWidget(self.conn_btn)
 
-    def handle_connect(self):
+    def get_info(self):
         port = self.port_combo.currentText()
         baud = self.baud_combo.currentText()
         mode = self.mode_combo.currentText()
-        self.controller.connect_serial(port, baud, mode)
-
+        return port, baud, mode
 
 # --- [Image Panel: 왼쪽 중간 이미지] ---
 class ImagePanel(QFrame):
@@ -192,7 +190,6 @@ class ImageSubPanel(QFrame):
                 curr_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
             ))
         super().resizeEvent(event)
-
  
 # --- [Data Panel: 우측 중간 상단 표] ---
 class DataPanel(QFrame):
@@ -295,7 +292,6 @@ class MainPanel(QMainWindow):
         self.setting_panel = SettingPanel(self)
         self.image_panel = ImagePanel(self)
         self.data_panel = DataPanel(self)
-        # self.log_panel = LogPanel(self)
         self.control_panel = ControlPanel(self)
         self.construct()
 

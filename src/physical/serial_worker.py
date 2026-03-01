@@ -15,28 +15,33 @@ class SerialWorker(QThread):
 
     def run(self):
         try:
-            # 시리얼 포트 설정
-            ser = serial.Serial(self.port, self.baudrate, timeout=0.1)
+            ser = serial.Serial(self.port, self.baudrate, timeout=0) # Non-blocking 모드
             buffer = bytearray()
+            
             while self.running:
-                data = ser.read(ser.in_waiting or 1)
-                buffer.extend(data)
+                if ser.in_waiting > 0:
+                    # 1. 있는 데이터를 한꺼번에 다 긁어오기 (속도 핵심)
+                    data = ser.read(ser.in_waiting)
+                    buffer.extend(data)
 
-                # 버퍼에 17바이트 이상이 있을 때만 반복 확인
-                while len(buffer) >= 17:
-                    if buffer[0] == 0x02: # 시작 바이트 확인
-                        if buffer[16] == 0x03: # 끝 바이트 확인
-                            packet = buffer[:17]
-                            # 여기서 패리티 체크 후 로직 처리
-                            print("Perfect Packet!")
-
-                            self.data_received.emit(packet)
-                            del buffer[:17] # 처리한 패킷 삭제
+                    print(f"현재 버퍼 크기: {len(buffer)} / 내용: {buffer.hex()}")
+                    # 2. 버퍼에 쌓인 모든 패킷을 한 번의 루프에서 다 처리하기
+                    while len(buffer) >= 17:
+                        if buffer[0] == 0x02:
+                            if buffer[16] == 0x03:
+                                packet = buffer[:17]
+                                print(f"Perfect Packet!: {packet}")
+                                self.data_received.emit(packet) # GUI로 전송
+                                del buffer[:17]
+                            else:
+                                # 끝 바이트가 안 맞으면 시작 바이트가 잘못된 것임
+                                buffer.pop(0)
                         else:
-                            # 시작은 맞는데 끝이 아니면, 이 0x02는 가짜(데이터 일부)일 수 있음
-                            buffer.pop(0) # 첫 바이트 버리고 다음 0x02 찾기
-                    else:
-                        buffer.pop(0) # 시작 바이트가 아니면 버림
+                            buffer.pop(0)
+                else:
+                    # 데이터가 없을 때만 아주 잠깐 쉽니다.
+                    # 200Hz면 1~2ms 정도가 적당합니다.
+                    self.msleep(1)
         except Exception as e:
             self.error_occurred.emit(str(e))
 
@@ -54,10 +59,7 @@ class SerialWorker(QThread):
                 if buffer[16] == 0x03: # 끝 바이트 확인
                     packet = buffer[:17]
                     # print(len(packet))
-                    # 여기서 패리티 체크 후 로직 처리
                     # print(f"Perfect Packet!: {packet}")
-                    # print(type(packet))
-                    # print(packet)
                     self.data_received.emit(packet)
                     del buffer[:17] # 처리한 패킷 삭제
                 else:
