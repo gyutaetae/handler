@@ -13,7 +13,47 @@ class SerialWorker(QThread):
         self.baudrate = baudrate
         self.running = True
 
+
     def run(self):
+        try:
+            ser = serial.Serial(self.port, self.baudrate, timeout=0) # Non-blocking 모드
+            buffer = bytearray()
+            
+            while self.running:
+                if ser.in_waiting > 0:
+                    # 1. 있는 데이터를 한꺼번에 다 긁어오기 (속도 핵심)
+                    data = ser.read(ser.in_waiting)
+                    buffer.extend(data)
+
+                    print(f"현재 버퍼 크기: {len(buffer)} / 내용: {buffer.hex()}")
+                    # 2. 버퍼에 쌓인 모든 패킷을 한 번의 루프에서 다 처리하기
+                    while len(buffer) >= 3:
+                        if buffer[0] == 0x02:
+                            payload_len = buffer[2]
+                            # 3 = stx, count, size_of_payload, 2 = checksum, etx
+                            total_len = 3 + payload_len + 2
+
+                            if len(buffer) >= total_len:
+                                if buffer[total_len-1] == 0x03:
+                                    packet = buffer[:total_len]
+                                    self.data_received.emit(packet)
+                                    del buffer[:total_len]
+                                else:
+                                    # 끝 바이트가 안 맞으면 시작 바이트가 잘못된 것임
+                                    buffer.pop(0)
+                            else:
+                                # 데이터 덜 쌓임
+                                break
+                        else:
+                            # 시작이 0x02가 아님
+                            buffer.pop(0)
+                else:
+                    # 데이터가 없을 때만 아주 잠깐 쉼
+                    self.msleep(1)
+        except Exception as e:
+            self.error_occurred.emit(str(e))
+                            
+    def run_17bytes(self):
         try:
             ser = serial.Serial(self.port, self.baudrate, timeout=0) # Non-blocking 모드
             buffer = bytearray()

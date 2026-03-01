@@ -16,8 +16,11 @@ try:
     for _ in range(1000) :
         tpg.generate_packet()
         packet = tpg.get_packet(to_byte=True)
-        ser.write(packet)
-        time.sleep(0.005) 
+        # print(packet)
+        for p in packet:
+            # print(bytes([p]))
+            ser.write(bytes([p]))
+            time.sleep(0.005)
 
 except KeyboardInterrupt:
     print("중단됨")

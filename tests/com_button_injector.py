@@ -16,8 +16,9 @@ try:
     count = 0
     while len(tpg.combination_list) >0 :
         packet = tpg.get_combination()
-        ser.write(packet)
-        time.sleep(0.5) 
+        for p in packet:
+            ser.write(bytes([p]))
+            time.sleep(0.005)
 
 except KeyboardInterrupt:
     print("중단됨")
