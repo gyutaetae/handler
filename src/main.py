@@ -43,8 +43,14 @@ class Main():
         self.app_controller.update_inspection.connect(self.main_window._update_inspection)
         # app_controller.error_occurred.connect(main_window.display_error_message)
         
-        # # 만약 UI에서 장비로 명령을 보내야 한다면 반대로도 연결 가능합니다.
+        # UI에서 장비 port, rate, protocol 
         self.main_window.setting_panel.conn_btn.clicked.connect(self.run_serial_worker)
+
+        ### For test ###
+        # self.random_test()
+        # self.specific_test()
+        # self.app_controller.update_worker(self.serial_worker, protocol="CCH->RCWS")
+        ### For test end ###
 
         # 실행
         self.main_window.showMaximized()
@@ -53,14 +59,15 @@ class Main():
     def run_serial_worker(self):
         # Physical Layer: 시리얼 통신 주체 생성
         # QThread 기반으로 백그라운드에서 데이터를 계속 읽어옵니다.
-        SERIAL_PORT , BAUDRATE, _ = self.main_window.setting_panel.get_info()
+        SERIAL_PORT , BAUDRATE, PROTOCOL = self.main_window.setting_panel.get_info()
         print("SERIAL_PORT: ", SERIAL_PORT)
         print("BAUDRATE: ", BAUDRATE)
+        print("PROTOCOL: ", PROTOCOL)
         self.serial_worker = SerialWorker(port=SERIAL_PORT, baudrate=BAUDRATE)
         # 시리얼 읽기 시작 
         # Serial_worker의 thread run()을 실행
         self.serial_worker.start()
-        self.app_controller.update_worker(self.serial_worker)
+        self.app_controller.update_worker(self.serial_worker, PROTOCOL)
 
         # self.random_test()
         # self.specific_test()

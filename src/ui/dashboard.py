@@ -33,7 +33,7 @@ class SettingPanel(QFrame):
         # Mode
         layout.addWidget(QLabel("Mode:"))
         self.mode_combo = QComboBox()
-        self.mode_combo.addItems(["RS422"])
+        self.mode_combo.addItems(["CCH->TFCC", "GCH->TFCC", "CCH->RCWS"])
         layout.addWidget(self.mode_combo)
 
         layout.addStretch()

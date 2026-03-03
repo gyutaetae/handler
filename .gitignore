@@ -2,3 +2,4 @@
 test_prototype/
 src/ui/prev_images/
 src/ui/images_backup/
+*.lnk
