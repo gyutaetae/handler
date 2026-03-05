@@ -47,12 +47,6 @@ class Main():
         # UI에서 장비 port, rate, protocol 
         self.main_window.setting_panel.conn_btn.clicked.connect(self.run_serial_worker)
 
-        ### For test ###
-        # self.random_test()
-        # self.specific_test()
-        # self.app_controller.update_worker(self.serial_worker, protocol="CCH->RCWS")
-        ### For test end ###
-
         # 실행
         self.main_window.showMaximized()
         sys.exit(self.app.exec())
@@ -67,13 +61,19 @@ class Main():
         self.serial_worker = SerialWorker(port=SERIAL_PORT, baudrate=BAUDRATE)
         # 시리얼 읽기 시작 
         # Serial_worker의 thread run()을 실행
-        # self.serial_worker.start()
-        # self.app_controller.update_worker(self.serial_worker, PROTOCOL)
+        self.serial_worker.start()
+        self.app_controller.update_worker(self.serial_worker, PROTOCOL)
 
+        # CCH->RCWS만 가능
         # self.random_test()
-        # self.specific_test()
-        self.specific_gch_test()
-        self.app_controller.update_worker(self.serial_worker, protocol="GCH->TFCC")
+
+        # 그 외?
+        # if PROTOCOL == "CCH->RCWS":
+        #     self.specific_test()
+        # elif PROTOCOL == "GCH->TFCC":
+        #     self.specific_gch_test()
+
+        # self.app_controller.update_worker(self.serial_worker, protocol=PROTOCOL)
     
     def random_test(self):
         ## For Test ###
