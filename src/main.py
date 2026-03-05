@@ -17,7 +17,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
 from tests.byte_simulator import TestPacketGenerator
-from tests.button_simulator import TestButtonPacket
+from tests.CCH_button_simulator import TestButtonPacket
+from tests.GCH_button_simulator import TestGCHButtonPacket
 ### For Test ###
 
 class Main():
@@ -66,11 +67,13 @@ class Main():
         self.serial_worker = SerialWorker(port=SERIAL_PORT, baudrate=BAUDRATE)
         # 시리얼 읽기 시작 
         # Serial_worker의 thread run()을 실행
-        self.serial_worker.start()
-        self.app_controller.update_worker(self.serial_worker, PROTOCOL)
+        # self.serial_worker.start()
+        # self.app_controller.update_worker(self.serial_worker, PROTOCOL)
 
         # self.random_test()
         # self.specific_test()
+        self.specific_gch_test()
+        self.app_controller.update_worker(self.serial_worker, protocol="GCH->TFCC")
     
     def random_test(self):
         ## For Test ###
@@ -84,12 +87,29 @@ class Main():
     def specific_test(self):
         ### For Test ###
         # --- 테스트 데이터 자동 생성 타이머 ---
-        self.tpg = TestButtonPacket()
+        # if single then test per button
+        # if not single then limited test per button combination
+        self.tpg = TestButtonPacket(single=True)
         self.tpg.generate_combinations()
         self.test_timer = QTimer()
         self.test_timer.timeout.connect(self.inject_test_specific_data)
-        self.test_timer.start(500) # 0.5s 마다 실행
+        # self.test_timer.start(500) # 0.5s 마다 실행
+        self.test_timer.start(1000) # 0.5s 마다 실행
         # -----------------------------
+
+    def specific_gch_test(self):
+        ### For Test ###
+        # --- 테스트 데이터 자동 생성 타이머 ---
+        # if single then test per button
+        # if not single then limited test per button combination
+        self.tpg = TestGCHButtonPacket(single=True)
+        self.tpg.generate_combinations()
+        self.test_timer = QTimer()
+        self.test_timer.timeout.connect(self.inject_test_specific_data)
+        # self.test_timer.start(500) # 0.5s 마다 실행
+        self.test_timer.start(1000) # 0.5s 마다 실행
+        # -----------------------------
+
 
     def inject_test_random_data(self):
         # unlimited random
@@ -98,7 +118,6 @@ class Main():
         self.serial_worker.test(packet)
 
     def inject_test_specific_data(self):
-        # limited test per button 
         packet = self.tpg.get_combination()
         self.serial_worker.test(packet) # 데이터 주입
 

@@ -81,6 +81,7 @@ class RealTimeGraph(pg.PlotWidget):
         super().__init__(parent)
         self.setBackground('w')
         self.setTitle(title)
+        self.setMinimumHeight(200)
         self.title = title
         self.showGrid(x=True, y=True)
         if self.title == 'height' or self.title == 'turning':

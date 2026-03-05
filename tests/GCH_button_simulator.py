@@ -1,7 +1,8 @@
 import random 
 
-class TestButtonPacket:
-    def __init__(self):
+class TestGCHButtonPacket:
+    def __init__(self, single=False):
+        self.single = single
         self.packet = [None] * 17
         self.combination_list = []
         self.stx = 0x02
@@ -9,7 +10,10 @@ class TestButtonPacket:
         self.size_of_payload_data = 0x0C
         self.count = 0x00
         self.__button_packet_map()
-        self.__combinations()
+        if single:
+            self.__single_btn_test()
+        else:
+            self.__combinations()
     
     def _allocate_random(self, start=0, end=255):
         return random.randint(start, end)
@@ -54,6 +58,14 @@ class TestButtonPacket:
             self.config_packet(comb_name)
             self.calc_checksum()
             self.combination_list.append((comb_name, self.packet.copy()))
+            if self.single:
+                comb_name = "idle"
+                self.init_packet()
+                self.generate_no_switch_payload()
+                self.config_packet(comb_name)
+                self.calc_checksum()
+                self.combination_list.append((comb_name, self.packet.copy()))
+
     
     def config_packet(self, comb_name):
         def make_or(packet_id, names:list):
@@ -121,18 +133,25 @@ class TestButtonPacket:
             "load": {12: ["idle"], 13: ["idle", "load"], 14: ["idle"]},
             "auto_tracking": {12: ["idle"], 13: ["idle", "auto_tracking"], 14: ["idle"]},
             "cursor": {12: ["idle"], 13: ["idle", "cursor"], 14: ["idle"]},
+            "idle": {12: ["idle"], 13: ["idle"], 14: ["idle"]},
+        }
+
+    def __single_btn_test(self):
+        self.combinations = {
+            "fire": {12: ["idle", "fire"], 13: ["idle"], 14: ["idle"]},
+            "laser": {12: ["idle","laser"], 13: ["idle"], 14: ["idle"]},
+            "palm": {12: ["idle", "palm"], 13: ["idle"], 14: ["idle"]},
+            "auto_tracking": {12: ["idle", "auto_tracking"], 13: ["idle"], 14: ["idle"]},
+            "idle": {12: ["idle"], 13: ["idle"], 14: ["idle"]},
         }
 
     def __button_packet_map(self):
         self.switch_1 = {
             "idle"                    : 0b00000000,
-            "fire"                    : 0b10000000,
-            "palm"                    : 0b01000000,
+            "palm"                    : 0b10000000,
+            "fire"                    : 0b01000000,
             "laser"                   : 0b00100000,
-            "lock_on"                 : 0b00010000,
-            "ets"                     : 0b00001000,
-            "override"                : 0b00000100,
-            "fire_enable"             : 0b00000010
+            "auto_tracking"           : 0b00010000,
         }
 
         self.switch_2 = {

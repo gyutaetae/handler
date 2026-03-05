@@ -1,6 +1,6 @@
 import serial
 import time
-from button_simulator import TestButtonPacket
+from tests.CCH_button_simulator import TestButtonPacket
 
 # com0com으로 만든 쌍 중 '보내는 쪽' 포트 (예: COM11)
 OUT_PORT = 'COM11' 

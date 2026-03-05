@@ -3,3 +3,8 @@ test_prototype/
 src/ui/prev_images/
 src/ui/images_backup/
 *.lnk
+*.exe
+*.spec
+python_packaging.txt
+src_for_build/
+수정필요내용.txt

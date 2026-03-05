@@ -29,7 +29,7 @@ class TelemetryController(QObject):
         # checksum 확인
         if validate_packet(packet, self.protocol):
             # print('-'*20)
-            print("packet valide")
+            # print("packet valide")
             parser = TelemetryParser(self.protocol)
             transformer = DataTransformer(self.protocol)
             signal_configurator = SignalConfigurator(self.protocol)

@@ -3,10 +3,9 @@ import sys
 import random
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QGridLayout, QPushButton, QLabel, 
-                             QComboBox, QTableWidget, QTableWidgetItem, QTextEdit, 
-                             QFrame, QHeaderView)
-from PyQt6.QtCore import pyqtSignal, QObject, QThread, Qt, QDateTime, QSize
-from PyQt6.QtGui import QPainter, QPixmap, QColor, QFont, QMouseEvent
+                             QComboBox, QFrame)
+from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtGui import QPixmap
 from ui.widgets import Widgets
 
 # --- [Setting Panel: 상단 설정] ---
@@ -68,6 +67,7 @@ class SettingPanel(QFrame):
 class ImagePanel(QFrame):
     def __init__(self, parent):
         super().__init__(parent)
+        self.mode = "CCH"
         self.parent = parent
         self.parent.update_button.connect(self._update)
         self.setStyleSheet("""
@@ -80,25 +80,34 @@ class ImagePanel(QFrame):
         self.IMAGE_PATH = os.path.join(BASE_DIR, "images")
         background_front = os.path.join(self.IMAGE_PATH, "front.png")
         background_back = os.path.join(self.IMAGE_PATH, "back.png")
+
+        self.PO_IMAGE_PATH = os.path.join(self.IMAGE_PATH, "po")
+        background_po = os.path.join(self.PO_IMAGE_PATH, "po.png")
+        
         
         self.front_images = ['laser', 'lock_on', 'move_enable', 'override', 
                              'fire_enable', 'camera','shoot_mode','cursor',
                              'load','auto_tracking','control_mode','zoom',
                              'modify_dist','fcc','rcms']
         self.back_images = ['fire', 'palm']
+        self.po_images = ["laser","auto_tracking","fire","fire_2", "palm", "palm_2"]
 
         self.main_layout = QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.front = ImageSubPanel(background_front, self.front_images)
         self.back = ImageSubPanel(background_back, self.back_images)
+        self.po_panel=ImageSubPanel(background_po, self.po_images, is_po=True)
+        self.po_panel.hide()
 
         self.base_width = self.front.orig_w
         self.front.set_fixed_scale(self.base_width)
         self.back.set_fixed_scale(self.base_width)
+        self.po_panel.set_fixed_scale(int(self.base_width*3))
 
-        self.main_layout.addWidget(self.front, stretch=1)
+        self.main_layout.addWidget(self.front)
         # self.main_layout.addSpacing(50)
-        self.main_layout.addWidget(self.back, stretch=1)
+        self.main_layout.addWidget(self.back)
+        self.main_layout.addWidget(self.po_panel)
 
     def _update(self, signals):
         def check_state(status):
@@ -113,31 +122,49 @@ class ImagePanel(QFrame):
                 return True
             elif status == "10":
                 return True
-        # print(signals)
-        # 전면부에서 찾기
-        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        
         for name, status in signals.items():
-            if name == 'ets': name = 'move_enable'
-            if name in self.back_images:
-                self.back.layers[name]["label"].setVisible(check_state(status))
+            if self.mode == "CCH":
+                if name == 'ets': name = 'move_enable'
+                if name in self.back_images:
+                    self.back.layers[name]["label"].setVisible(check_state(status))
+                else:
+                    self.front.layers[name]["label"].setVisible(check_state(status))
+                    if name == "control_mode":
+                        if status == "00":
+                            self.front.layers["fcc"]["label"].setVisible(check_state(status))
+                            self.front.layers["rcms"]["label"].setVisible(check_state(status))
+                        elif status == "10":
+                            self.front.layers["fcc"]["label"].setVisible(check_state(status))
+                            self.front.layers["rcms"]["label"].setVisible(False)
+                        elif status == "01":
+                            self.front.layers["rcms"]["label"].setVisible(check_state(status))
+                            self.front.layers["fcc"]["label"].setVisible(False)
             else:
-                self.front.layers[name]["label"].setVisible(check_state(status))
-                if name == "control_mode":
-                    if status == "00":
-                        self.front.layers["fcc"]["label"].setVisible(check_state(status))
-                        self.front.layers["rcms"]["label"].setVisible(check_state(status))
-                    elif status == "10":
-                        self.front.layers["fcc"]["label"].setVisible(check_state(status))
-                        self.front.layers["rcms"]["label"].setVisible(False)
-                    elif status == "01":
-                        self.front.layers["rcms"]["label"].setVisible(check_state(status))
-                        self.front.layers["fcc"]["label"].setVisible(False)
+                self.po_panel.layers[name]["label"].setVisible(check_state(status))
+                if name == "fire":
+                    self.po_panel.layers[name+'_2']["label"].setVisible(check_state(status))
+                elif name == "palm":
+                    self.po_panel.layers[name+'_2']["label"].setVisible(check_state(status))
+
+    def change_background(self, mode_text):
+        if mode_text == "GCH->TFCC":
+            self.mode = "GCH"
+            self.front.hide()
+            self.back.hide()
+            self.po_panel.show()
+        else:
+            self.mode = "CCH"
+            self.po_panel.hide()
+            self.front.show()
+            self.back.show()
 
 class ImageSubPanel(QFrame):
-    def __init__(self, background_image, btn_images, parent=None):
+    def __init__(self, background_image, btn_images, parent=None, is_po=False):
         super().__init__(parent)
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         self.IMAGE_PATH = os.path.join(BASE_DIR, "images")
+        self.PO_IMAGE_PATH = os.path.join(self.IMAGE_PATH, "po")
         self.layers = {}
 
         self.bg_pixmap = QPixmap(background_image)
@@ -148,7 +175,10 @@ class ImageSubPanel(QFrame):
         self.bg_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         for btn_name in btn_images:
-            btn_file = os.path.join(self.IMAGE_PATH, btn_name+".png")
+            if is_po:
+                btn_file = os.path.join(self.PO_IMAGE_PATH, btn_name+".png")
+            else:
+                btn_file = os.path.join(self.IMAGE_PATH, btn_name+".png")
             layer = QLabel(self)
             pix = QPixmap(btn_file)
             layer.setPixmap(pix)
@@ -293,6 +323,9 @@ class MainPanel(QMainWindow):
         self.image_panel = ImagePanel(self)
         self.data_panel = DataPanel(self)
         self.control_panel = ControlPanel(self)
+
+        self.setting_panel.mode_combo.currentTextChanged.connect(self.image_panel.change_background)
+
         self.construct()
 
     def construct(self):
