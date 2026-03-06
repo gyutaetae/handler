@@ -100,9 +100,9 @@ class ImagePanel(QFrame):
         self.po_panel.hide()
 
         self.base_width = self.front.orig_w
-        self.front.set_fixed_scale(self.base_width)
-        self.back.set_fixed_scale(self.base_width)
-        self.po_panel.set_fixed_scale(int(self.base_width*3))
+        # self.front.set_fixed_scale(self.base_width)
+        # self.back.set_fixed_scale(self.base_width)
+        # self.po_panel.set_fixed_scale(int(self.base_width*3))
 
         self.main_layout.addWidget(self.front)
         # self.main_layout.addSpacing(50)
