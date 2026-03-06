@@ -204,20 +204,23 @@ class ImageSubPanel(QFrame):
             lbl.setFixedSize(target_width, new_h)
 
     def resizeEvent(self, event):
-        """창 크기 변경 시 배경과 모든 레이어 동기화"""
         curr_size = self.size()
+        scale_factor = 0.9
+        reduced_size = self.size() * scale_factor
 
         self.bg_label.resize(curr_size)
         if not self.bg_pixmap.isNull():
             self.bg_label.setPixmap(self.bg_pixmap.scaled(
-                curr_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+                reduced_size, # curr_size 대신 줄어든 크기 전달
+                Qt.AspectRatioMode.KeepAspectRatio, 
             ))
 
         for item in self.layers.values():
             lbl, pix = item["label"], item["pixmap"]
             lbl.resize(curr_size)
             lbl.setPixmap(pix.scaled(
-                curr_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+                reduced_size, 
+                Qt.AspectRatioMode.KeepAspectRatio, 
             ))
         super().resizeEvent(event)
  
